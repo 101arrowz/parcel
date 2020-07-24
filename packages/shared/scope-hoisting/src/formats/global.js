@@ -118,11 +118,7 @@ export function generateExports(
   }
 
   let entry = bundle.getMainEntry();
-  if (
-    entry &&
-    !referencedAssets.has(entry) &&
-    (!isEntry(bundle, bundleGraph) || isReferenced(bundle, bundleGraph))
-  ) {
+  if (entry && !referencedAssets.has(entry)) {
     let exportsId = assertString(entry.meta.exportsIdentifier);
     exported.add(exportsId);
 

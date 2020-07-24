@@ -64,6 +64,7 @@ export function getExportIdentifier(
 
 export function needsPrelude(
   bundle: NamedBundle,
+  // eslint-disable-next-line
   bundleGraph: BundleGraph<NamedBundle>,
 ): boolean {
   if (bundle.env.outputFormat !== 'global') {
@@ -73,29 +74,34 @@ export function needsPrelude(
   // If this is an entry bundle and it is referenced by other bundles,
   // we need to add the prelude code, which allows registering modules dynamically at runtime.
 
-  return (
-    isEntry(bundle, bundleGraph) &&
-    // If this bundle has an async descendant, it will use the JSRuntime,
-    // which uses parcelRequire. It's also possible that the descendant needs
-    // to register exports for its own descendants.
-    (hasAsyncDescendant(bundle, bundleGraph) ||
-      // If an asset in this bundle is referenced, this bundle will use
-      //`parcelRequire.register` to register the asset.
-      isReferenced(bundle, bundleGraph))
-  );
+  return true;
+
+  // return (
+  //   isEntry(bundle, bundleGraph) &&
+  //   // If this bundle has an async descendant, it will use the JSRuntime,
+  //   // which uses parcelRequire. It's also possible that the descendant needs
+  //   // to register exports for its own descendants.
+  //   (hasAsyncDescendant(bundle, bundleGraph) ||
+  //     // If an asset in this bundle is referenced, this bundle will use
+  //     //`parcelRequire.register` to register the asset.
+  //     isReferenced(bundle, bundleGraph))
+  // );
 }
 
 export function isEntry(
   bundle: NamedBundle,
+  // eslint-disable-next-line
   bundleGraph: BundleGraph<NamedBundle>,
 ): boolean {
+  return !!bundle.getMainEntry();
+
   // If there is no parent JS bundle (e.g. in an HTML page), or environment is isolated (e.g. worker)
   // then this bundle is an "entry"
-  return (
-    !bundleGraph.hasParentBundleOfType(bundle, 'js') ||
-    bundle.env.isIsolated() ||
-    !!bundle.getMainEntry()?.isIsolated
-  );
+  // return (
+  //   !bundleGraph.hasParentBundleOfType(bundle, 'js') ||
+  //   bundle.env.isIsolated() ||
+  //   !!bundle.getMainEntry()?.isIsolated
+  // );
 }
 
 export function isReferenced(
