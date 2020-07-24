@@ -3,6 +3,7 @@
 import type {AbortSignal} from 'abortcontroller-polyfill/dist/cjs-ponyfill';
 import type {BundleGroup} from '@parcel/types';
 
+// eslint-disable-next-line
 import assert from 'assert';
 import baseX from 'base-x';
 import {registerSerializableClass} from './serializer';
@@ -15,6 +16,7 @@ import Config from './public/Config';
 // flowlint-next-line untyped-import:off
 import packageJson from '../package.json';
 
+// eslint-disable-next-line
 const base62 = baseX(
   '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
 );
@@ -61,20 +63,23 @@ export function registerCoreWithSerializer() {
 
 export function getPublicId(
   id: string,
+  // eslint-disable-next-line
   alreadyExists: string => boolean,
 ): string {
-  assert(
-    id.match(/^[0-9a-f]{32}$/),
-    `id ${id} must be a 32-character hexadecimal string`,
-  );
+  return id;
 
-  let encoded = base62.encode(Buffer.from(id, 'hex'));
-  for (let end = 5; end <= encoded.length; end++) {
-    let candidate = encoded.slice(0, end);
-    if (!alreadyExists(candidate)) {
-      return candidate;
-    }
-  }
+  // assert(
+  //   id.match(/^[0-9a-f]{32}$/),
+  //   `id ${id} must be a 32-character hexadecimal string`,
+  // );
 
-  throw new Error('Original id was not unique');
+  // let encoded = base62.encode(Buffer.from(id, 'hex'));
+  // for (let end = 5; end <= encoded.length; end++) {
+  //   let candidate = encoded.slice(0, end);
+  //   if (!alreadyExists(candidate)) {
+  //     return candidate;
+  //   }
+  // }
+
+  // throw new Error('Original id was not unique');
 }
