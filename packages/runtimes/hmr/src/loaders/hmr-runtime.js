@@ -20,12 +20,16 @@ interface ParcelModule {
     _acceptSelfCallbacks: Array<(Function) => void>,
     _acceptDepCallbacks: {|[string]: Array<() => void>|},
     _disposeCallbacks: Array<(mixed) => void>,
+    _declineSelf: boolean,
+    _declineDeps: {|[string]: boolean|},
 
     accept(deps: Array<string> | string, cb: (Function) => void): void,
     accept(cb: (Function) => void): void,
     dispose(cb: (mixed) => void): void,
+    decline(deps: Array<string> | string): void;
     decline(): void,
   |};
+  _forceUpdate: ?boolean
 }
 
 declare var module: {bundle: ParcelRequire, ...};
@@ -42,14 +46,18 @@ function Module(moduleName) {
   OldModule.call(this, moduleName);
   this.hot = {
     data: module.bundle.hotData,
+    _declineSelf: false,
+    _declineDeps: {},
     _acceptSelfCallbacks: [],
     _acceptDepCallbacks: {},
     _disposeCallbacks: [],
     accept: function(deps, cb) {
       if (!cb) {
+        this._declineSelf = false;
         this._acceptSelfCallbacks.push(deps || function() {});
       } else {
         [].concat(deps).forEach(d => {
+          this._declineDeps[d] = false;
           let list = this._acceptDepCallbacks[d];
           if (!list) {
             list = [];
@@ -62,6 +70,15 @@ function Module(moduleName) {
     dispose: function(fn) {
       this._disposeCallbacks.push(fn);
     },
+    decline: function(deps) {
+      if (!deps) {
+        this._declineSelf = true;
+      } else {
+        [].concat(deps).forEach(d => {
+          this._declineDeps[d] = true;
+        })
+      }
+    }
   };
 
   module.bundle.hotData = null;
@@ -312,9 +329,14 @@ function hmrAcceptCheck(
 
   var cached = bundle.cache[id];
 
-  if (cached && cached.hot && cached.hot._acceptSelfCallbacks.length) {
-    assetsToAccept.push([bundle, id]);
-    return true;
+  if (cached && cached.hot) {
+    if (cached.hot._declineSelf) {
+      window.location.reload();
+      return;
+    } else if (cached.hot._acceptSelfCallbacks.length) {
+      assetsToAccept.push([bundle, id]);
+      return true;
+    }
   }
 
   var deps = bundle.modules[id][1];
@@ -328,11 +350,15 @@ function hmrAcceptCheck(
   if (
     depSpecifier &&
     cached &&
-    cached.hot &&
-    depSpecifier in cached.hot._acceptDepCallbacks
+    cached.hot
   ) {
-    assetsToAccept.push([depBundle, dep]);
-    return true;
+    if (cached.hot._declineDeps[depSpecifier]) {
+      window.location.reload();
+      return;
+    } else if (depSpecifier in cached.hot._acceptDepCallbacks) {
+      assetsToAccept.push([depBundle, dep]);
+      return true;
+    }
   }
 
   return getParents(global.parcelRequire, id).some(function(v) {
@@ -353,10 +379,9 @@ function hmrAcceptRun(bundle: ParcelRequire, id: string) {
     });
   }
 
-  // TODO this recreates `module.exports` instead of mutating it, so the imports
-  // in parents aren't updated automatically
-  delete bundle.cache[id];
+  cached._forceUpdate = true;
   bundle(id);
+  delete cached._forceUpdate;
 
   cached = bundle.cache[id];
 

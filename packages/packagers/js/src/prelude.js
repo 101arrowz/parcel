@@ -65,7 +65,25 @@
 
       var module = (cache[name] = new newRequire.Module(name));
 
-      modules[name][0].call(
+      run(module, modules[name][0]);
+    }
+
+    var cached = cache[name];
+    return cached._forceUpdate ? assign(
+      cached.exports,
+      run(cached, modules[cached.id][0])
+    ) : cached.exports;
+
+    function localRequire(x) {
+      return newRequire(localRequire.resolve(x));
+    }
+
+    function resolve(x) {
+      return modules[name][1][x] || x;
+    }
+
+    function run(module, exportFn) {
+      exportFn.call(
         module.exports,
         localRequire,
         module,
@@ -74,14 +92,15 @@
       );
     }
 
-    return cache[name].exports;
-
-    function localRequire(x) {
-      return newRequire(localRequire.resolve(x));
-    }
-
-    function resolve(x) {
-      return modules[name][1][x] || x;
+    function assign(oldExports, newExports) {
+      var oldKeys = Object.keys(oldExports);
+      var newKeys = Object.keys(newExports);
+      for (var i = 0; i < oldKeys.length; ++i) {
+        delete oldExports[oldKeys[i]];
+      }
+      for (var i = 0; i < newKeys.length; ++i) {
+        oldExports[newKeys[i]] = newExports[newKeys[i]];
+      }
     }
   }
 
