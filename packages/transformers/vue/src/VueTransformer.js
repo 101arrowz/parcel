@@ -70,7 +70,7 @@ export default (new Transformer({
     let baseId = md5FromObject({
       filePath: asset.filePath,
     }).slice(-6);
-    let scopeId = 'data-v-' + baseId;
+    let id = 'data-v-' + baseId;
     let hmrId = baseId + '-hmr';
     let basePath = basename(asset.filePath);
     let {template, script, styles, customBlocks} = nullthrows(
@@ -87,7 +87,7 @@ export default (new Transformer({
         basePath,
         options,
         resolve,
-        scopeId,
+        id,
         hmrId,
       });
     }
@@ -119,7 +119,7 @@ let initialize = () => {
       ? `require('custom:./${basePath}').default(script);`
       : ''
   }
-  script.__scopeId = '${scopeId}';
+  script.__scopeId = '${id}';
   script.__file = ${JSON.stringify(
     options.mode === 'production' ? basePath : asset.filePath,
   )};
@@ -190,7 +190,7 @@ async function processPipeline({
   basePath,
   options,
   resolve,
-  scopeId,
+  id,
   hmrId,
 }) {
   let compiler = await options.packageManager.require(
@@ -250,7 +250,7 @@ async function processPipeline({
         inMap: template.src ? undefined : template.map,
         isFunctional,
         compilerOptions: {
-          scopeId,
+          id,
         },
       });
       if (templateComp.errors.length) {
@@ -378,7 +378,7 @@ ${
             preprocessLang: style.lang || 'css',
             scoped: style.scoped,
             map: style.src ? undefined : style.map,
-            id: scopeId,
+            id,
           });
           if (styleComp.errors.length) {
             throw new ThrowableDiagnostic({
