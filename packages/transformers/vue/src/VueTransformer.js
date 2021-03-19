@@ -66,11 +66,11 @@ export default (new Transformer({
     };
   },
   async transform({asset, options, resolve, config}) {
-    let baseId = md5FromObject({
+    let id = md5FromObject({
       filePath: asset.filePath,
     }).slice(-6);
-    let scopeId = 'data-v-' + baseId;
-    let hmrId = baseId + '-hmr';
+    let scopeId = 'data-v-' + id;
+    let hmrId = id + '-hmr';
     let basePath = basename(asset.filePath);
     let {template, script, styles, customBlocks} = nullthrows(
       await asset.getAST(),
@@ -86,7 +86,7 @@ export default (new Transformer({
         basePath,
         options,
         resolve,
-        scopeId,
+        id,
         hmrId,
       });
     }
@@ -189,7 +189,7 @@ async function processPipeline({
   basePath,
   options,
   resolve,
-  scopeId,
+  id,
   hmrId,
 }) {
   switch (asset.pipeline) {
@@ -221,10 +221,9 @@ async function processPipeline({
         filename: asset.filePath,
         source: content,
         inMap: template.src ? undefined : template.map,
+        scoped: styles.some(style => style.scoped),
         isFunctional,
-        compilerOptions: {
-          scopeId,
-        },
+        id,
       });
       if (templateComp.errors.length) {
         throw new ThrowableDiagnostic({
@@ -339,7 +338,7 @@ ${
             preprocessLang: style.lang || 'css',
             scoped: style.scoped,
             map: style.src ? undefined : style.map,
-            id: scopeId,
+            id,
           });
           if (styleComp.errors.length) {
             throw new ThrowableDiagnostic({
