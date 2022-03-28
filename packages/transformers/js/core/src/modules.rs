@@ -208,19 +208,27 @@ impl ESMFold {
   }
 
   fn create_exports_assign(&mut self, name: JsWord, right: Expr, span: Span) -> ModuleItem {
-    ModuleItem::Stmt(Stmt::Expr(ExprStmt {
-      expr: Box::new(Expr::Assign(AssignExpr {
-        op: AssignOp::Assign,
-        left: PatOrExpr::Expr(Box::new(Expr::Member(MemberExpr {
-          obj: Box::new(Expr::Ident(Ident::new("exports".into(), DUMMY_SP))),
-          prop: MemberProp::Ident(Ident::new(name, DUMMY_SP)),
-          span: DUMMY_SP,
-        }))),
-        right: Box::new(right),
-        span: DUMMY_SP,
-      })),
+    let export = Ident::new(
+      format!(
+        "$parcel$exportAssign${}{:x}",
+        name,
+        (self as *mut Self as usize)
+      )
+      .into(),
+      DUMMY_SP,
+    );
+    self.create_export(name, Expr::Ident(export.clone()), span);
+    ModuleItem::Stmt(Stmt::Decl(Decl::Var(VarDecl {
       span,
-    }))
+      kind: VarDeclKind::Var,
+      decls: vec![VarDeclarator {
+        span: DUMMY_SP,
+        name: Pat::Ident(export.into()),
+        init: Some(Box::new(right)),
+        definite: false,
+      }],
+      declare: false,
+    })))
   }
 
   fn create_import_access(&mut self, source: &JsWord, imported: &JsWord, span: Span) -> Expr {
